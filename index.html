@@ -59,7 +59,7 @@
     const webhookUrl = "/api/upload"; // Use Vercel proxy
 
     // Upload image + data to backend
-    async function uploadImage() {
+async function uploadImage() {
   const fileInput = document.getElementById("imageUpload");
   const file = fileInput.files[0];
   if (!file) return alert("Please select an image");
@@ -74,7 +74,7 @@
   try {
     const res = await fetch("/api/upload", {
       method: "POST",
-      body: file, // raw file
+      body: file,
       headers: {
         "Content-Type": file.type,
         "X-File-Name": file.name,
@@ -83,7 +83,7 @@
     });
 
     if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
-    const data = await res.json(); // webhook must return JSON
+    const data = await res.json(); // n8n webhook must return JSON
     extractedData = data;
     renderPreview(data);
   } catch (err) {
