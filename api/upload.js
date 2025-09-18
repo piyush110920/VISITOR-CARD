@@ -7,7 +7,7 @@ export const config = {
 export default async function handler(req, res) {
   try {
     const response = await fetch(
-      "http://ai.senselive.io:5678/webhook/senselive-visitor-card",
+      "http://ai.senselive.io:5678/webhook-test/senselive-visitor-card",
       {
         method: req.method,
         headers: {
