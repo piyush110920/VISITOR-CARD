@@ -60,39 +60,37 @@
 
     // Upload image + data to backend
     async function uploadImage() {
-    const fileInput = document.getElementById("imageUpload");
-    const file = fileInput.files[0];
+  const fileInput = document.getElementById("imageUpload");
+  const file = fileInput.files[0];
+  if (!file) return alert("Please select an image");
 
-    if (!file) return alert("Please select an image");
+  const extraFields = {
+    sheetId: document.getElementById("sheetId").value,
+    gid: document.getElementById("gid").value,
+    requirements: document.getElementById("requirements").value,
+    action: "upload",
+  };
 
-    // Collect extra fields
-    const extraFields = {
-        sheetId: document.getElementById("sheetId").value,
-        gid: document.getElementById("gid").value,
-        requirements: document.getElementById("requirements").value,
-        action: "upload",
-    };
+  try {
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: file, // raw file
+      headers: {
+        "Content-Type": file.type,
+        "X-File-Name": file.name,
+        "X-Fields": JSON.stringify(extraFields),
+      },
+    });
 
-    try {
-        const res = await fetch("/api/upload", {
-        method: "POST",
-        body: file,
-        headers: {
-            "Content-Type": file.type,
-            "X-File-Name": file.name,
-            "X-Fields": JSON.stringify(extraFields),
-        },
-        });
-
-        if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
-        const data = await res.json();
-        extractedData = data;
-        renderPreview(data);
-    } catch (error) {
-        console.error("Upload error:", error);
-        alert("Image upload failed. Check console for details.");
-    }
-    }
+    if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
+    const data = await res.json(); // webhook must return JSON
+    extractedData = data;
+    renderPreview(data);
+  } catch (err) {
+    console.error("Upload error:", err);
+    alert("Upload failed! Check console for details.");
+  }
+}
 
     function renderPreview(data) {
       const table = document.getElementById("dataPreview");

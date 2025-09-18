@@ -1,57 +1,41 @@
-import FormData from "form-data";
+import { FormData } from "formdata-node";
+import { File } from "fetch-blob";
+import fetch from "node-fetch"; // Node.js fetch
 
 export const config = {
-  api: {
-    bodyParser: false, // Needed to handle raw file uploads
-  },
+  api: { bodyParser: false },
 };
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    // Read the incoming request as a buffer
+    // Read file + other fields
     const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
+    for await (const chunk of req) chunks.push(chunk);
     const buffer = Buffer.concat(chunks);
 
-    // Build FormData to forward to n8n webhook
+    // Extract extra fields from headers
+    const extraFields = req.headers["x-fields"] ? JSON.parse(req.headers["x-fields"]) : {};
+
     const form = new FormData();
-    if (req.headers["content-type"]?.startsWith("multipart/form-data")) {
-      form.append("image", buffer, {
-        filename: req.headers["x-file-name"] || "upload.jpg",
-        contentType: req.headers["content-type"],
-      });
-    }
+    // Append the image as a File object
+    form.set("image", new File([buffer], req.headers["x-file-name"] || "upload.jpg", { type: req.headers["content-type"] }));
+    
+    // Append other fields
+    Object.keys(extraFields).forEach(key => form.set(key, extraFields[key]));
 
-    // Append other fields if sent as FormData
-    // Here we assume sheetId, gid, requirements, action
-    if (req.headers["x-fields"]) {
-      const fields = JSON.parse(req.headers["x-fields"]);
-      Object.keys(fields).forEach((key) => {
-        form.append(key, fields[key]);
-      });
-    }
+    // Send to n8n webhook
+    const response = await fetch("http://ai.senselive.io:5678/webhook-test/senselive-visitor-card", {
+      method: "POST",
+      body: form,
+      headers: form.headers, // set headers for multipart/form-data
+    });
 
-    // Forward request to n8n webhook
-    const response = await fetch(
-      "http://ai.senselive.io:5678/webhook-test/senselive-visitor-card",
-      {
-        method: "POST",
-        body: form,
-        headers: form.getHeaders(),
-      }
-    );
-
-    // Forward response back to frontend
     const text = await response.text();
     res.status(response.status).send(text);
-  } catch (error) {
-    console.error("Proxy error:", error);
+  } catch (err) {
+    console.error("Proxy error:", err);
     res.status(500).json({ error: "Proxy request failed" });
   }
 }
