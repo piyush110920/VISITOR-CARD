@@ -57,7 +57,9 @@
   <!-- ✅ Your script must be inside <script> -->
   <script>
     let extractedData = {};
-    let webhookUrl = "http://ai.senselive.io:5678/webhook/senselive-visitor-card";
+    // NEW
+    let webhookUrl = "/api/upload";
+
 
     async function uploadImage() {
       let formData = new FormData();
