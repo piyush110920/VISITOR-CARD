@@ -1,6 +1,11 @@
+import { pipeline } from "stream";
+import { promisify } from "util";
+
+const streamPipeline = promisify(pipeline);
+
 export const config = {
   api: {
-    bodyParser: false, // Important for images
+    bodyParser: false,
   },
 };
 
@@ -12,17 +17,14 @@ export default async function handler(req, res) {
         method: req.method,
         headers: {
           ...req.headers,
-          host: "", // remove host to avoid conflicts
+          host: "", // avoid conflicts
         },
-        body: req.method === "POST" ? req.body : undefined,
+        body: req, // pass the incoming stream directly
       }
     );
 
-    const contentType = response.headers.get("content-type");
-    const data = await response.arrayBuffer();
-
-    res.setHeader("Content-Type", contentType || "application/octet-stream");
-    res.status(response.status).send(Buffer.from(data));
+    res.status(response.status);
+    response.body.pipe(res); // pipe response back to client
   } catch (error) {
     console.error("Proxy error:", error);
     res.status(500).json({ error: "Proxy request failed" });
