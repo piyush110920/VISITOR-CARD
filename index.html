@@ -62,19 +62,38 @@
 
 
     async function uploadImage() {
-      let formData = new FormData();
-      formData.append("sheetId", document.getElementById("sheetId").value);
-      formData.append("gid", document.getElementById("gid").value);
-      formData.append("requirements", document.getElementById("requirements").value);
-      formData.append("action", "upload");
-      let file = document.getElementById("imageUpload").files[0];
-      if (file) formData.append("image", file);
+  const fileInput = document.getElementById("imageUpload");
+  const file = fileInput.files[0];
+  if (!file) return alert("Please select an image");
 
-      let res = await fetch(webhookUrl, { method: "POST", body: formData });
-      let data = await res.json();
-      extractedData = data;
-      renderPreview(data);
-    }
+  const extraFields = {
+    sheetId: document.getElementById("sheetId").value,
+    gid: document.getElementById("gid").value,
+    requirements: document.getElementById("requirements").value,
+    action: "upload",
+  };
+
+  try {
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: file,
+      headers: {
+        "Content-Type": file.type,
+        "X-File-Name": file.name,
+        "X-Fields": JSON.stringify(extraFields),
+      },
+    });
+
+    if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
+    const data = await res.json();
+    extractedData = data;
+    renderPreview(data);
+  } catch (err) {
+    console.error("Upload error:", err);
+    alert("Upload failed! Check console for details.");
+  }
+}
+
 
     function renderPreview(data) {
       let table = document.getElementById("dataPreview");
