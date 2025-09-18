@@ -9,12 +9,13 @@
   <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
     <h1 class="text-2xl font-bold mb-4">Visitor Card Extractor</h1>
 
-    <!-- Google Sheet IDs -->
-    <label class="block mb-2 font-medium">Google Sheet IDs</label>
+    <!-- Google Sheet ID -->
+    <label class="block mb-2 font-medium">Google Sheet ID</label>
     <input id="sheetId" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter Google Sheet ID" required>
 
-     <label class="block mb-2 font-medium">Google Sheet GID (Tab ID)</label>
-    <input id="sheetGid" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter Sheet GID (e.g., 0 or 981894402)" required>
+    <!-- Sheet GID -->
+    <label class="block mb-2 font-medium">Google Sheet GID</label>
+    <input id="gid" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter GID (e.g. 0)" required>
 
     <!-- Image upload -->
     <label class="block mb-2 font-medium">Upload or Capture Image</label>
@@ -53,87 +54,81 @@
     </div>
   </div>
 
-<script>
-let extractedData = {};
-let webhookUrl = "http://ai.senselive.io:5678/webhook-test/senselive-visitor-card";
+  <!-- ✅ Your script must be inside <script> -->
+  <script>
+    let extractedData = {};
+    let webhookUrl = "http://ai.senselive.io:5678/webhook/senselive-visitor-card";
 
-// Upload form
-async function uploadImage() {
-  let formData = new FormData();
-  formData.append("sheetId", document.getElementById("sheetId").value);
-  formData.append("requirements", document.getElementById("requirements").value);
-  formData.append("action", "upload");   // <--- tell n8n this is upload
-  let file = document.getElementById("imageUpload").files[0];
-  if (file) formData.append("image", file);
+    async function uploadImage() {
+      let formData = new FormData();
+      formData.append("sheetId", document.getElementById("sheetId").value);
+      formData.append("gid", document.getElementById("gid").value);
+      formData.append("requirements", document.getElementById("requirements").value);
+      formData.append("action", "upload");
+      let file = document.getElementById("imageUpload").files[0];
+      if (file) formData.append("image", file);
 
-  let res = await fetch(webhookUrl, { method: "POST", body: formData });
-  let data = await res.json();
+      let res = await fetch(webhookUrl, { method: "POST", body: formData });
+      let data = await res.json();
+      extractedData = data;
+      renderPreview(data);
+    }
 
-  extractedData = data;
-  renderPreview(data);
-}
+    function renderPreview(data) {
+      let table = document.getElementById("dataPreview");
+      table.innerHTML = "";
+      let headers = Object.keys(data);
+      let row = "<tr class='bg-gray-200'>";
+      headers.forEach(h => row += `<th class='border p-2'>${h}</th>`);
+      row += "</tr><tr>";
+      headers.forEach(h => row += `<td class='border p-2'><input class='w-full border p-1' value="${data[h] || ''}" data-key="${h}"></td>`);
+      row += "</tr>";
+      table.innerHTML = row;
+      document.getElementById("previewSection").classList.remove("hidden");
+    }
 
-// Render preview in table
-function renderPreview(data) {
-  let table = document.getElementById("dataPreview");
-  table.innerHTML = "";
-  let headers = Object.keys(data);
-  let row = "<tr class='bg-gray-200'>";
-  headers.forEach(h => row += `<th class='border p-2'>${h}</th>`);
-  row += "</tr><tr>";
-  headers.forEach(h => row += `<td class='border p-2'><input class='w-full border p-1' value="${data[h] || ''}" data-key="${h}"></td>`);
-  row += "</tr>";
-  table.innerHTML = row;
+    function collectData() {
+      let inputs = document.querySelectorAll("#dataPreview input");
+      let verified = {};
+      inputs.forEach(i => verified[i.dataset.key] = i.value);
+      return verified;
+    }
 
-  document.getElementById("previewSection").classList.remove("hidden");
-}
+    async function saveData() {
+      let verified = collectData();
+      verified.action = "save";
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(verified)
+      });
+      alert("Data saved to sheet!");
+    }
 
-// Collect edited data
-function collectData() {
-  let inputs = document.querySelectorAll("#dataPreview input");
-  let verified = {};
-  inputs.forEach(i => verified[i.dataset.key] = i.value);
-  return verified;
-}
+    function saveAndMail() {
+      document.getElementById("templateSection").classList.remove("hidden");
+    }
 
-// Save to sheet
-async function saveData() {
-  let verified = collectData();
-  verified.action = "save";   // <--- tell n8n this is save
+    async function sendMail() {
+      let verified = collectData();
+      verified.action = "sendMail";
+      verified.template = document.getElementById("templateSelect").value;
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(verified)
+      });
+      alert("Data saved & mail sent!");
+    }
 
-  await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(verified)
-  });
-  alert("Data saved to sheet!");
-}
-
-// Save + Mail
-function saveAndMail() {
-  document.getElementById("templateSection").classList.remove("hidden");
-}
-
-// Send mail
-async function sendMail() {
-  let verified = collectData();
-  verified.action = "sendMail";   // <--- tell n8n this is sendMail
-  verified.template = document.getElementById("templateSelect").value;
-
-  await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(verified)
-  });
-  alert("Data saved & mail sent!");
-}
-
-// Capture image (camera)
-function captureImage() {
-  let input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.capture = "environment";
-  input.onchange = e => document.getElementById("imageUpload").files = e.target.files;
-  input.click();
-}
+    function captureImage() {
+      let input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.capture = "environment";
+      input.onchange = e => document.getElementById("imageUpload").files = e.target.files;
+      input.click();
+    }
+  </script>
+</body>
+</html>
