@@ -54,48 +54,32 @@
     </div>
   </div>
 
+  <!-- ✅ Your script must be inside <script> -->
   <script>
     let extractedData = {};
-    const webhookUrl = "/api/upload"; // Use Vercel proxy
+    // NEW
+    let webhookUrl = "/api/upload";
 
-    // Upload image + data to backend
-async function uploadImage() {
-  const fileInput = document.getElementById("imageUpload");
-  const file = fileInput.files[0];
-  if (!file) return alert("Please select an image");
 
-  const extraFields = {
-    sheetId: document.getElementById("sheetId").value,
-    gid: document.getElementById("gid").value,
-    requirements: document.getElementById("requirements").value,
-    action: "upload",
-  };
+    async function uploadImage() {
+      let formData = new FormData();
+      formData.append("sheetId", document.getElementById("sheetId").value);
+      formData.append("gid", document.getElementById("gid").value);
+      formData.append("requirements", document.getElementById("requirements").value);
+      formData.append("action", "upload");
+      let file = document.getElementById("imageUpload").files[0];
+      if (file) formData.append("image", file);
 
-  try {
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: file,
-      headers: {
-        "Content-Type": file.type,
-        "X-File-Name": file.name,
-        "X-Fields": JSON.stringify(extraFields),
-      },
-    });
-
-    if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
-    const data = await res.json(); // n8n webhook must return JSON
-    extractedData = data;
-    renderPreview(data);
-  } catch (err) {
-    console.error("Upload error:", err);
-    alert("Upload failed! Check console for details.");
-  }
-}
+      let res = await fetch(webhookUrl, { method: "POST", body: formData });
+      let data = await res.json();
+      extractedData = data;
+      renderPreview(data);
+    }
 
     function renderPreview(data) {
-      const table = document.getElementById("dataPreview");
+      let table = document.getElementById("dataPreview");
       table.innerHTML = "";
-      const headers = Object.keys(data);
+      let headers = Object.keys(data);
       let row = "<tr class='bg-gray-200'>";
       headers.forEach(h => row += `<th class='border p-2'>${h}</th>`);
       row += "</tr><tr>";
@@ -106,26 +90,21 @@ async function uploadImage() {
     }
 
     function collectData() {
-      const inputs = document.querySelectorAll("#dataPreview input");
-      const verified = {};
+      let inputs = document.querySelectorAll("#dataPreview input");
+      let verified = {};
       inputs.forEach(i => verified[i.dataset.key] = i.value);
       return verified;
     }
 
     async function saveData() {
-      const verified = collectData();
+      let verified = collectData();
       verified.action = "save";
-      try {
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(verified)
-        });
-        alert("Data saved to sheet!");
-      } catch (error) {
-        console.error(error);
-        alert("Failed to save data.");
-      }
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(verified)
+      });
+      alert("Data saved to sheet!");
     }
 
     function saveAndMail() {
@@ -133,24 +112,19 @@ async function uploadImage() {
     }
 
     async function sendMail() {
-      const verified = collectData();
+      let verified = collectData();
       verified.action = "sendMail";
       verified.template = document.getElementById("templateSelect").value;
-      try {
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(verified)
-        });
-        alert("Data saved & mail sent!");
-      } catch (error) {
-        console.error(error);
-        alert("Failed to send mail.");
-      }
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(verified)
+      });
+      alert("Data saved & mail sent!");
     }
 
     function captureImage() {
-      const input = document.createElement("input");
+      let input = document.createElement("input");
       input.type = "file";
       input.accept = "image/*";
       input.capture = "environment";
