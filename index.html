@@ -64,6 +64,7 @@
       formData.append("gid", document.getElementById("gid").value);
       formData.append("requirements", document.getElementById("requirements").value);
       formData.append("action", "upload");
+      formData.append("cardName", document.getElementById("cardName").value);
       let file = document.getElementById("imageUpload").files[0];
       if (file) formData.append("image", file);
 
