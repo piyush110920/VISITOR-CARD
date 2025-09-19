@@ -77,17 +77,38 @@
     }
 
     function renderPreview(data) {
-      let table = document.getElementById("dataPreview");
-      table.innerHTML = "";
-      let headers = Object.keys(data);
-      let row = "<tr class='bg-gray-200'>";
-      headers.forEach(h => row += `<th class='border p-2'>${h}</th>`);
-      row += "</tr><tr>";
-      headers.forEach(h => row += `<td class='border p-2'><input class='w-full border p-1' value="${data[h] || ''}" data-key="${h}"></td>`);
-      row += "</tr>";
-      table.innerHTML = row;
-      document.getElementById("previewSection").classList.remove("hidden");
+    let table = document.getElementById("dataPreview");
+    table.innerHTML = "";
+
+    // Iterate over each key-value pair in the data object
+    for (const key in data) {
+      if (Object.hasOwnProperty.call(data, key)) {
+        // Create a new row for each item
+        let row = document.createElement("tr");
+
+        // First cell for the key (e.g., "name1")
+        let keyCell = document.createElement("td");
+        keyCell.className = "border p-2 font-medium";
+        keyCell.textContent = key;
+        row.appendChild(keyCell);
+
+        // Second cell for the value with an input field
+        let valueCell = document.createElement("td");
+        valueCell.className = "border p-2";
+        let input = document.createElement("input");
+        input.className = "w-full border p-1";
+        input.value = data[key] || "";
+        input.setAttribute("data-key", key);
+        valueCell.appendChild(input);
+        row.appendChild(valueCell);
+
+        // Append the new row to the table
+        table.appendChild(row);
+      }
     }
+
+    document.getElementById("previewSection").classList.remove("hidden");
+  }
 
     function collectData() {
       let inputs = document.querySelectorAll("#dataPreview input");
