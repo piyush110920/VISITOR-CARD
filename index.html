@@ -1,157 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Visitor Card Extractor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>Visitor Card Extractor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
-    <h1 class="text-2xl font-bold mb-4">Visitor Card Extractor</h1>
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
+    <h1 class="text-2xl font-bold mb-4">Visitor Card Extractor</h1>
 
-    <!-- Google Sheet ID -->
-    <label class="block mb-2 font-medium">Google Sheet ID</label>
-    <input id="sheetId" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter Google Sheet ID" required>
+        <label class="block mb-2 font-medium">Google Sheet ID</label>
+    <input id="sheetId" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter Google Sheet ID" required>
 
-    <!-- Sheet GID -->
-    <label class="block mb-2 font-medium">Google Sheet GID</label>
-    <input id="gid" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter GID (e.g. 0)" required>
+        <label class="block mb-2 font-medium">Google Sheet GID</label>
+    <input id="gid" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter GID (e.g. 0)" required>
 
-    <!-- Image upload -->
-    <label class="block mb-2 font-medium">Upload or Capture Image</label>
-    <input id="imageUpload" type="file" accept="image/*" class="w-full border p-2 rounded mb-4">
-    <button onclick="captureImage()" class="bg-indigo-600 text-white px-4 py-2 rounded mb-4">Click Image</button>
-
-    <!-- Requirements -->
-    <label class="block mb-2 font-medium">Requirements (Optional)</label>
-    <textarea id="requirements" class="w-full border p-2 rounded mb-4" placeholder="Any notes..."></textarea>
-
-    <!-- Submit -->
-    <button onclick="uploadImage()" class="bg-green-600 text-white px-4 py-2 rounded">Upload</button>
-
-    <!-- Data Preview -->
-    <div id="previewSection" class="mt-6 hidden">
-      <h2 class="text-xl font-semibold mb-2">Verify Extracted Data</h2>
-      <table class="w-full border" id="dataPreview"></table>
-
-      <div class="mt-4 space-x-2">
-        <button onclick="saveData()" class="bg-blue-600 text-white px-4 py-2 rounded">Save Data to Sheet</button>
-        <button onclick="saveAndMail()" class="bg-purple-600 text-white px-4 py-2 rounded">Save Data + Send Mail</button>
-      </div>
+        <label class="block mb-2 font-medium">Upload or Capture Image</label>
+    <input id="imageUpload" type="file" accept="image/*" class="w-full border p-2 rounded mb-4">
+    <button onclick="captureImage()" class="bg-indigo-600 text-white px-4 py-2 rounded mb-4">Click Image</button>
+ 
+    <div class="mb-4">
+      <label class="block mb-2 font-medium">Card Name</label>
+      <input id="cardName" type="text" class="w-full border p-2 rounded" placeholder="Enter Card Name">
     </div>
 
-    <!-- Templates Section -->
-    <div id="templateSection" class="mt-6 hidden">
-      <h2 class="text-xl font-semibold mb-2">Choose Email Template</h2>
-      <select id="templateSelect" class="w-full border p-2 rounded mb-4">
-        <option value="template1">Template 1: Welcome Email</option>
-        <option value="template2">Template 2: Meeting Confirmation</option>
-        <option value="template3">Template 3: Thank You</option>
-        <option value="template4">Template 4: Follow-up</option>
-        <option value="template5">Template 5: Custom Offer</option>
-      </select>
-      <button onclick="sendMail()" class="bg-red-600 text-white px-4 py-2 rounded">Send Mail</button>
-    </div>
-  </div>
+        <label class="block mb-2 font-medium">Requirements (Optional)</label>
+    <textarea id="requirements" class="w-full border p-2 rounded mb-4" placeholder="Any notes..."></textarea>
 
-  <!-- ✅ Your script must be inside <script> -->
-  <script>
-    let extractedData = {};
-    // NEW
-    let webhookUrl = "/api/upload";
+        <button onclick="uploadImage()" class="bg-green-600 text-white px-4 py-2 rounded">Upload</button>
+
+        <div id="previewSection" class="mt-6 hidden">
+      <h2 class="text-xl font-semibold mb-2">Verify Extracted Data</h2>
+      <table class="w-full border" id="dataPreview"></table>
+
+      <div class="mt-4 space-x-2">
+        <button onclick="saveData()" class="bg-blue-600 text-white px-4 py-2 rounded">Save Data to Sheet</button>
+        <button onclick="saveAndMail()" class="bg-purple-600 text-white px-4 py-2 rounded">Save Data + Send Mail</button>
+      </div>
+    </div>
+
+        <div id="templateSection" class="mt-6 hidden">
+      <h2 class="text-xl font-semibold mb-2">Choose Email Template</h2>
+      <select id="templateSelect" class="w-full border p-2 rounded mb-4">
+        <option value="template1">Template 1: Welcome Email</option>
+        <option value="template2">Template 2: Meeting Confirmation</option>
+        <option value="template3">Template 3: Thank You</option>
+        <option value="template4">Template 4: Follow-up</option>
+        <option value="template5">Template 5: Custom Offer</option>
+      </select>
+      <button onclick="sendMail()" class="bg-red-600 text-white px-4 py-2 rounded">Send Mail</button>
+    </div>
+  </div>
+
+    <script>
+    let extractedData = {};
+    // NEW
+    let webhookUrl = "/api/upload";
 
 
-    async function uploadImage() {
-      let formData = new FormData();
-      formData.append("sheetId", document.getElementById("sheetId").value);
-      formData.append("gid", document.getElementById("gid").value);
-      formData.append("requirements", document.getElementById("requirements").value);
-      formData.append("action", "upload");
-      let file = document.getElementById("imageUpload").files[0];
-      if (file) formData.append("image", file);
+    async function uploadImage() {
+      let formData = new FormData();
+      formData.append("sheetId", document.getElementById("sheetId").value);
+      formData.append("gid", document.getElementById("gid").value);
+      formData.append("requirements", document.getElementById("requirements").value);
+      formData.append("action", "upload");
+      let file = document.getElementById("imageUpload").files[0];
+      if (file) formData.append("image", file);
 
-      let res = await fetch(webhookUrl, { method: "POST", body: formData });
-      let data = await res.json();
-      extractedData = data;
-      renderPreview(data);
-    }
+      let res = await fetch(webhookUrl, { method: "POST", body: formData });
+      let data = await res.json();
+      extractedData = data;
+      renderPreview(data);
+    }
 
-    function renderPreview(data) {
-    let table = document.getElementById("dataPreview");
-    table.innerHTML = "";
+    function renderPreview(data) {
+    let table = document.getElementById("dataPreview");
+    table.innerHTML = "";
 
-    // Iterate over each key-value pair in the data object
-    for (const key in data) {
-      if (Object.hasOwnProperty.call(data, key)) {
-        // Create a new row for each item
-        let row = document.createElement("tr");
+    // Iterate over each key-value pair in the data object
+    for (const key in data) {
+      if (Object.hasOwnProperty.call(data, key)) {
+        // Create a new row for each item
+        let row = document.createElement("tr");
 
-        // First cell for the key (e.g., "name1")
-        let keyCell = document.createElement("td");
-        keyCell.className = "border p-2 font-medium";
-        keyCell.textContent = key;
-        row.appendChild(keyCell);
+        // First cell for the key (e.g., "name1")
+        let keyCell = document.createElement("td");
+        keyCell.className = "border p-2 font-medium";
+        keyCell.textContent = key;
+        row.appendChild(keyCell);
 
-        // Second cell for the value with an input field
-        let valueCell = document.createElement("td");
-        valueCell.className = "border p-2";
-        let input = document.createElement("input");
-        input.className = "w-full border p-1";
-        input.value = data[key] || "";
-        input.setAttribute("data-key", key);
-        valueCell.appendChild(input);
-        row.appendChild(valueCell);
+        // Second cell for the value with an input field
+        let valueCell = document.createElement("td");
+        valueCell.className = "border p-2";
+        let input = document.createElement("input");
+        input.className = "w-full border p-1";
+        input.value = data[key] || "";
+        input.setAttribute("data-key", key);
+        valueCell.appendChild(input);
+        row.appendChild(valueCell);
 
-        // Append the new row to the table
-        table.appendChild(row);
-      }
-    }
+        // Append the new row to the table
+        table.appendChild(row);
+      }
+    }
 
-    document.getElementById("previewSection").classList.remove("hidden");
-  }
+    document.getElementById("previewSection").classList.remove("hidden");
+  }
 
-    function collectData() {
-      let inputs = document.querySelectorAll("#dataPreview input");
-      let verified = {};
-      inputs.forEach(i => verified[i.dataset.key] = i.value);
-      return verified;
-    }
+    function collectData() {
+      let inputs = document.querySelectorAll("#dataPreview input");
+      let verified = {};
+      inputs.forEach(i => verified[i.dataset.key] = i.value);
+      return verified;
+    }
 
-    async function saveData() {
-      let verified = collectData();
-      verified.action = "save";
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(verified)
-      });
-      alert("Data saved to sheet!");
-    }
+    async function saveData() {
+      let verified = collectData();
+      verified.action = "save";
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(verified)
+      });
+      alert("Data saved to sheet!");
+    }
 
-    function saveAndMail() {
-      document.getElementById("templateSection").classList.remove("hidden");
-    }
+    function saveAndMail() {
+      document.getElementById("templateSection").classList.remove("hidden");
+    }
 
-    async function sendMail() {
-      let verified = collectData();
-      verified.action = "sendMail";
-      verified.template = document.getElementById("templateSelect").value;
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(verified)
-      });
-      alert("Data saved & mail sent!");
-    }
+    async function sendMail() {
+      let verified = collectData();
+      verified.action = "sendMail";
+      verified.template = document.getElementById("templateSelect").value;
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(verified)
+      });
+      alert("Data saved & mail sent!");
+    }
 
-    function captureImage() {
-      let input = document.createElement("input");
-      input.type = "file";
-      input.accept = "image/*";
-      input.capture = "environment";
-      input.onchange = e => document.getElementById("imageUpload").files = e.target.files;
-      input.click();
-    }
-  </script>
+    function captureImage() {
+      let input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.capture = "environment";
+      input.onchange = e => document.getElementById("imageUpload").files = e.target.files;
+      input.click();
+    }
+  </script>
 </body>
 </html>
