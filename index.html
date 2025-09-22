@@ -122,25 +122,23 @@
             formData.append("cardName", document.getElementById("cardName").value);
             let file = document.getElementById("imageUpload").files[0];
             if (file) formData.append("image", file);
+          try {
+            let res = await fetch(webhookUrl, { method: "POST", body: formData });
+            let data = await res.json();
+            extractedData = data;
+            renderPreview(data);
 
-            try {
-                let res = await fetch(webhookUrl, { method: "POST", body: formData });
-                let data = await res.json();
-                extractedData = data;
-                renderPreview(data);
-
-                // Set button to success state
-                buttonText.textContent = 'Done';
-                uploadButton.classList.remove('bg-green-300');
-                uploadButton.classList.add('bg-green-600', 'hover:bg-green-700');
-
-            } catch (error) {
-                console.error("Upload failed:", error);
-                buttonText.textContent = 'Upload Failed';
-                uploadButton.classList.remove('bg-green-300');
-                uploadButton.classList.add('bg-red-600', 'hover:bg-red-700');
-
-            } finally {
+            // Set button to success state and make it disappear
+            buttonText.textContent = 'Done';
+            uploadButton.classList.remove('bg-green-300');
+            uploadButton.classList.add('bg-green-600', 'hover:bg-green-700');
+            uploadButton.style.display = 'none'; // This line makes the button disappear
+          } catch (error) {
+            // Handle any errors that occur during the fetch
+            console.error("Error during upload:", error);
+            // Optional: Revert button state or show an error message to the user
+          }
+            finally {
                 uploadButton.disabled = false;
             }
         }
