@@ -4,48 +4,105 @@
   <meta charset="UTF-8">
   <title>Visitor Card Extractor</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom styles for smoother transitions */
+    .transition-all-colors {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    }
+    .loading-spinner {
+        border-top-color: #ffffff;
+        -webkit-animation: spinner 1.5s linear infinite;
+        animation: spinner 1.5s linear infinite;
+    }
+    @-webkit-keyframes spinner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes spinner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
-    <h1 class="text-2xl font-bold mb-4">Visitor Card Extractor</h1>
+<body class="bg-gray-100 p-6 min-h-screen flex items-center justify-center">
+  <div class="max-w-4xl w-full mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+    <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-8">Visitor Card Extractor</h1>
 
-        <label class="block mb-2 font-medium">Google Sheet ID</label>
-    <input id="sheetId" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter Google Sheet ID" required>
+    <form id="mainForm" class="space-y-6">
 
-        <label class="block mb-2 font-medium">Google Sheet GID</label>
-    <input id="gid" type="text" class="w-full border p-2 rounded mb-4" placeholder="Enter GID (e.g. 0)" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="sheetId" class="block text-sm font-medium text-gray-700">Google Sheet ID</label>
+          <input id="sheetId" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="Enter Google Sheet ID" required>
+        </div>
+        <div>
+          <label for="gid" class="block text-sm font-medium text-gray-700">Google Sheet GID</label>
+          <input id="gid" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="Enter GID (e.g. 0)" required>
+        </div>
+      </div>
+      
+            <div>
+        <label for="imageUpload" class="block text-sm font-medium text-gray-700">Upload or Capture Image</label>
+        <div class="mt-1 flex items-center space-x-4">
+          <input id="imageUpload" type="file" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+          <button type="button" onclick="captureImage()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all-colors">
+              Click Image
+          </button>
+        </div>
+      </div>
+      
+      <div class="mb-4">
+        <label for="cardName" class="block text-sm font-medium text-gray-700">Card Name</label>
+        <input id="cardName" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="Enter Card Name">
+      </div>
 
-        <label class="block mb-2 font-medium">Upload or Capture Image</label>
-    <input id="imageUpload" type="file" accept="image/*" class="w-full border p-2 rounded mb-4">
-    <button onclick="captureImage()" class="bg-indigo-600 text-white px-4 py-2 rounded mb-4">Click Image</button>
- 
-    <div class="mb-4">
-      <label class="block mb-2 font-medium">Card Name</label>
-      <input id="cardName" type="text" class="w-full border p-2 rounded" placeholder="Enter Card Name">
+            <div>
+        <label for="requirements" class="block text-sm font-medium text-gray-700">Requirements (Optional)</label>
+        <textarea id="requirements" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" rows="3" placeholder="Any notes..."></textarea>
+      </div>
+
+            <div class="pt-2">
+        <button type="button" onclick="uploadImage()" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all-colors">
+            Upload
+        </button>
+      </div>
+      
+    </form>
+
+        <div id="previewSection" class="mt-10 hidden">
+      <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Verify Extracted Data</h2>
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-300" id="dataPreview">
+            <tbody class="divide-y divide-gray-200 bg-white">
+              </tbody>
+          </table>
+        </div>
+        <div class="mt-6 flex justify-end space-x-4">
+          <button type="button" onclick="saveData()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all-colors">
+              Save Data to Sheet
+          </button>
+          <button type="button" onclick="saveAndMail()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all-colors">
+              Save Data + Send Mail
+          </button>
+        </div>
+      </div>
     </div>
 
-        <label class="block mb-2 font-medium">Requirements (Optional)</label>
-    <textarea id="requirements" class="w-full border p-2 rounded mb-4" placeholder="Any notes..."></textarea>
-
-        <button onclick="uploadImage()" class="bg-green-600 text-white px-4 py-2 rounded">Upload</button>
-
-        <div id="previewSection" class="mt-6 hidden">
-      <h2 class="text-xl font-semibold mb-2">Verify Extracted Data</h2>
-      <table class="w-full border" id="dataPreview"></table>
-
-      <div class="mt-4 space-x-2">
-        <button onclick="saveData()" class="bg-blue-600 text-white px-4 py-2 rounded">Save Data to Sheet</button>
-        <button onclick="saveAndMail()" class="bg-purple-600 text-white px-4 py-2 rounded">Save Data + Send Mail</button>
-      </div>
-    </div>
-
         <div id="templateSection" class="mt-6 hidden">
-      <h2 class="text-xl font-semibold mb-2">Choose Email Template</h2>
-      <select id="templateSelect" class="w-full border p-2 rounded mb-4">
-        <option value="template1">Template 1: Welcome Email</option>
-        <option value="template2">Template 2: Contact mail</option>
-      </select>
-      <button onclick="sendMail()" class="bg-red-600 text-white px-4 py-2 rounded">Send Mail</button>
+      <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Choose Email Template</h2>
+        <select id="templateSelect" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border mb-4">
+          <option value="template1">Template 1: Welcome Email</option>
+          <option value="template2">Template 2: Meeting Confirmation</option>
+          <option value="template3">Template 3: Thank You</option>
+          <option value="template4">Template 4: Follow-up</option>
+          <option value="template5">Template 5: Custom Offer</option>
+        </select>
+        <button type="button" onclick="sendMail()" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all-colors">
+            Send Mail
+        </button>
+      </div>
     </div>
   </div>
 
@@ -61,7 +118,7 @@
       formData.append("gid", document.getElementById("gid").value);
       formData.append("requirements", document.getElementById("requirements").value);
       formData.append("action", "upload");
-      formData.append("cardName", document.getElementById("cardName").value);
+      formData.append("cardName", document.getElementById("cardName").value);
       let file = document.getElementById("imageUpload").files[0];
       if (file) formData.append("image", file);
 
@@ -98,7 +155,7 @@
         row.appendChild(valueCell);
 
         // Append the new row to the table
-        table.appendChild(row);
+        table.appendChild(row);
       }
     }
 
