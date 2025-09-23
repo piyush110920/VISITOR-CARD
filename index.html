@@ -46,10 +46,7 @@
         </div>
       </div>
 
-      <div class="mb-4">
-        <label for="cardName" class="block text-sm font-medium text-gray-700">Card Name</label>
-        <input id="cardName" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="Enter Card Name">
-      </div>
+      <!-- Removed Card Name input -->
 
       <div>
         <label for="requirements" class="block text-sm font-medium text-gray-700">Requirements (Optional)</label>
@@ -120,8 +117,13 @@
       let formData = new FormData();
       formData.append("sheetId", document.getElementById("sheetId").value);
       formData.append("gid", document.getElementById("gid").value);
-      formData.append("requirements", document.getElementById("requirements").value);
-      formData.append("cardName", document.getElementById("cardName").value);
+
+      // Add requirements only if filled
+      let req = document.getElementById("requirements").value;
+      if (req && req.trim() !== "") {
+        formData.append("requirements", req.trim());
+      }
+
       formData.append("action", "uploadSave");
       let file = document.getElementById("imageUpload").files[0];
       if (file) formData.append("image", file);
