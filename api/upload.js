@@ -9,7 +9,7 @@ export const config = {
 
 export default async function handler(req, res) {
   try {
-    const n8nWebhookUrl = 'http://ai.senselive.io:5678/webhook/senselive-visitor-card';
+    const n8nWebhookUrl = 'https://ai.senselive.io/webhook-test/senselive-visitor-card';
 
     // 1. Manually read the incoming request body from the stream
     const chunks = [];
